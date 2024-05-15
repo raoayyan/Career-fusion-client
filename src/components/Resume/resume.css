@@ -1,0 +1,131 @@
+/* Apply styles to the main container */
+.mainr {
+    flex-grow: 1;
+    display: flex;
+  }
+  
+  .sidelr {
+    width: 20%;
+    background-color: #f7f4f2;
+    flex-shrink: 0;
+  }
+  
+  .midr {
+    width: 65%;
+    background-color: #f7f4f2;
+    display: flex;
+    
+  
+    justify-content: center;
+    overflow: hidden; /* Hide the horizontal overflow */
+  }
+  
+  .midinr {
+    display: flex;
+    background-color: red;
+    flex-direction: column;
+    width: 93%;
+    background-color: #f7f4f2;
+    margin-top: 50px;
+    position: relative;
+    max-height: 79vh; /* Set a maximum height for scrolling */
+    overflow-y: scroll; /* Enable vertical scrolling when content overflows */
+    
+
+}
+/* Hide the scrollbar */
+.midinr::-webkit-scrollbar {
+    width: 0.5em;
+  }
+  
+  .midinr::-webkit-scrollbar-track {
+    background-color: transparent; /* Transparent scrollbar track */
+  }
+  
+  .midinr::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Transparent scrollbar thumb */
+  }
+  .midinr h2{
+    margin-bottom: 20px;
+  }
+  .siderr {
+    width: 20%;
+    background-color: #f7f4f2;
+    flex-shrink: 0;
+  }
+  
+  /* Apply styles to the container */
+  .containerr {
+    width: 100%;
+    display: grid;
+    background-color: #f7f4f2;
+    grid-template-columns: repeat(3, 250px);
+    gap: 20px;
+  }
+  .boxing1r {
+    width: 208px;
+    height: 280px;
+    background-color: white;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+  
+    
+   
+  }
+  .boxing1r:hover {
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.1);
+    
+
+  }
+  .boxing1r h2{
+    color:#000000;
+    font-family: cursive;
+    backdrop-filter: blur(5px);
+  }
+  .download-button {
+    width: 60%;
+    align-self: center;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #fa7930;
+    cursor: pointer;
+    display:flex;
+    margin-top: auto;
+    outline: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    background-color: #fa7930;
+    transition: 0.3s;
+    color: #000;
+    font-weight: 700;
+    font-family: cursive;
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+  
+  .download-button:hover {
+    background-color: #f7f4f2;
+    color: #fa7930;
+  }
+  .border{
+    width: 100%;
+    height: 600vh;
+    background-color: #000;
+  }
+  @media only screen and (max-width: 790px){
+    .containerr{
+      grid-template-columns: repeat(2, 250px);
+      gap: 10px;
+    }
+    .midr{
+      width: 100%;
+    }
+    .sidelr{
+      display: none;
+    }
+    .siderr{
+      display: none;
+    }
+  }

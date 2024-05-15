@@ -1,0 +1,195 @@
+/* Apply styles to the main container */
+.main {
+    flex-grow: 1;
+    display: flex;
+  }
+  
+  .sidel {
+    width: 20%;
+    background-color: #f7f4f2;
+    flex-shrink: 0;
+    margin-top: 50px;
+  }
+  
+  .mid {
+    width: 65%;
+    background-color: #f7f4f2;
+    display: flex;
+    
+  
+    justify-content: center;
+    overflow: hidden; /* Hide the horizontal overflow */
+  }
+  
+  .midin {
+    display: flex;
+    background-color: red;
+    flex-direction: column;
+    width: 93%;
+    background-color: #f7f4f2;
+    margin-top: 50px;
+    position: relative;
+    max-height: 79vh; /* Set a maximum height for scrolling */
+    overflow-y: scroll; /* Enable vertical scrolling when content overflows */
+    
+
+}
+/* Hide the scrollbar */
+.midin::-webkit-scrollbar {
+    width: 0.5em;
+  }
+  
+  .midin::-webkit-scrollbar-track {
+    background-color: transparent; /* Transparent scrollbar track */
+  }
+  
+  .midin::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Transparent scrollbar thumb */
+  }
+  
+  .sider {
+    width: 20%;
+    background-color: #f7f4f2;
+    flex-shrink: 0;
+    margin-top: 50px;
+  }
+  
+  /* Apply styles to the container */
+  .container {
+    width: 100%;
+    display: grid;
+    background-color: #f7f4f2;
+    grid-template-columns: repeat(3, 250px);
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  /* Apply styles to each box */
+  .boxing {
+    width: 250px;
+    height: 280px;
+    background-color: white;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .boxing:hover {
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .centered-heading {
+    font-size: 29px;
+    margin: 0;
+    padding: 10px;
+    font-family: cursive;
+  }
+  .desc{
+    font-size: 12px;
+    font-family: cursive;
+  }
+  .logo-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+    gap: 6px;
+  }
+  
+  .logo {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .assessment-button {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #fa7930;
+    cursor: pointer;
+    display: inline-block;
+    outline: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    background-color: #fa7930;
+    transition: 0.3s;
+    color: #000;
+    font-weight: 700;
+    font-family: cursive;
+    text-decoration: none;
+  }
+  
+  .assessment-button:hover {
+    background-color: #f7f4f2;
+    color: #fa7930;
+  }
+  
+  .skills-box {
+    width: 85%;
+    height: 30px; /* Adjust the height as needed */
+    border-bottom:1px solid #fa7930 ;
+    /* border: 1px solid #fa7930; */
+    margin-top: 10px;
+    margin-bottom: 10px; /* Adjust the margin between boxes */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f7f4f2;
+    transition: background-color 0.3s;
+    padding: 10px;
+    margin: 10px;
+  }
+  
+  /* Hover effect for the rectangular boxes */
+  .skills-box:hover {
+    background-color: #fa7930;
+  }
+  
+  /* Styles for the text inside the rectangular boxes */
+  .skills-text {
+    margin: 0;
+    color: #000;
+    font-size: 16px; /* Adjust the font size as needed */
+    font-family: cursive;
+  }
+  
+  /* Center the text vertically inside the rectangular boxes */
+  .skills-box p {
+    display: flex;
+    align-items: center;
+  }
+  @media only screen and (max-width: 760px) {
+   .sidel{
+    display: none;
+   }
+   .sider{
+    display: none;
+   }
+   .mid{
+    width: 100%;
+   }
+   .container{
+    grid-template-columns: repeat(2, 250px);
+    gap: 10px;
+   }
+    }
+    @media only screen and (max-width: 450px) {
+      .sidel{
+       display: none;
+      }
+      .sider{
+       display: none;
+      }
+      .mid{
+       width: 100%;
+       justify-content: center;
+      }
+      .container{
+        justify-content: center;
+       grid-template-columns: repeat(1, 200px);
+       gap: 10px;
+      }
+       }

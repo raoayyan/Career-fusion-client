@@ -1,0 +1,185 @@
+
+  
+ 
+  
+  
+ .job{
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   
+
+ }
+  
+ 
+  .container1 {
+    width: 70%;
+    padding: 20px;
+    display: block;
+    background-color: #f7f4f2;
+    grid-template-columns: repeat(3, 250px);
+    gap: 20px;
+  }
+  /* Apply styles to the job listings */
+  .jobs{
+    margin-top: 40px;
+  }
+  .jobs h2{
+    text-align: center;
+  }
+.jobs ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0;
+  margin-top: 29px;
+}
+.jobs ul li{
+  margin-top: 29px;
+}
+  /* Apply styles to each box */
+  .boxing1 {
+    width: 215px;
+    height: 280px;
+    background-color: white;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    transition: box-shadow 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .boxing1:hover {
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .job-title {
+    font-size: 19px;
+    margin: 0;
+    font-weight: bold;
+    font-family: cursive;
+  }
+  
+  .line {
+    width: 80%;
+    border: 0.5px solid #ccc;
+    margin: 10px 0;
+  }
+  
+  .job-info {
+    margin: 0;
+    font-size: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .apply-button {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #fa7930;
+    cursor: pointer;
+    display: inline-block;
+    outline: none;
+    border-radius: 5px;
+    color: black;
+    padding: 10px 20px;
+    background-color: #fa7930;
+    transition: 0.3s;
+    font-family: cursive;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 10px;
+  }
+  
+  .apply-button:hover {
+    background-color: #f7f4f2;
+    color:#fa7930 ;
+  }
+  
+  
+  .job-info span {
+    background-color: #f7f4f2;
+    border-radius: 30px;
+    padding: 5px 10px;
+    margin: 5px; /* Add margin to separate the skills */
+  }
+
+  /* Style the search form */
+.search-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f7f4f2;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+@media only screen and (max-width: 668px){
+  .search-form{
+    flex-direction: column;
+    gap: 10px
+  }
+ .search-input {
+  padding: 2px;
+  margin-right: 2px;
+  }
+}
+/* Style the search input fields */
+.search-input {
+  flex: 1;
+  padding: 8px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Style the search button */
+.search-button {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #fa7930;
+    cursor: pointer;
+    display: inline-block;
+    outline: none;
+    border-radius: 5px;
+    color: black;
+    padding: 10px 20px;
+    background-color: #fa7930;
+    transition: 0.3s;
+    font-family: cursive;
+    text-decoration: none;
+    
+}
+
+/* Add hover effect for the search button */
+.search-button:hover {
+  background-color:transparent; /* Button background color on hover */
+    color: #fa7930; 
+}
+.loader-container {
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  height: 100vh; /* Set the container's height to the viewport height to center vertically */
+}
+
+.loader {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #fa7930;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

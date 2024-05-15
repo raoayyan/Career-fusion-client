@@ -1,0 +1,60 @@
+/* Apply styles to the main container */
+.main {
+    flex-grow: 1;
+    display: flex;
+  }
+  
+  .sidel1 {
+    width: 20%;
+    background-color: #f7f4f2;
+    flex-shrink: 0;
+  }
+  
+  .mid1 {
+    width: 65%;
+    background-color: #f7f4f2;
+    display: flex;
+    border-left: 1px solid #000; /* Customize the left border width and color */
+  border-right: 1px solid #000;
+  
+    justify-content: center;
+    overflow: hidden; /* Hide the horizontal overflow */
+  }
+  
+  .midin1 {
+    display: flex;
+    background-color: red;
+    flex-direction: column;
+    width: 93%;
+    background-color: #f7f4f2;
+    margin-top: 50px;
+    position: relative;
+    max-height: 79vh; /* Set a maximum height for scrolling */
+    overflow-y: scroll; /* Enable vertical scrolling when content overflows */
+    
+
+}
+/* Hide the scrollbar */
+.midin1::-webkit-scrollbar {
+    width: 0.5em;
+  }
+  
+  .midin1::-webkit-scrollbar-track {
+    background-color: transparent; /* Transparent scrollbar track */
+  }
+  
+  .midin1::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Transparent scrollbar thumb */
+  }
+  
+  .sider1 {
+    width: 20%;
+    background-color: #f7f4f2;
+    flex-shrink: 0;
+  }
+  
+  
+  /* Apply styles to the container */
+  
+  
+  
