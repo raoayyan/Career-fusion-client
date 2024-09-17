@@ -1,0 +1,23 @@
+name: Continuous Integration Pipeline
+
+on:
+  pull_request:
+     branches:
+       - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20' # Adjust the Node.js version as per your project
+
+      - name: Install dependencies
+        run: npm install # 'npm install' since you don't have a package-lock.json
+
+      - name: Build the project
+        run: npm run build
