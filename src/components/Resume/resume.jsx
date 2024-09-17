@@ -62,7 +62,7 @@ const Resume = () => {
                   <button className="download-button" onClick={() => handleDownload(imageName)}>
                     Download
                   </button>
-                  <h3></h3>
+                 
                 </div>
                 
               ))}
