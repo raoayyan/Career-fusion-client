@@ -44,8 +44,3 @@ jobs:
       outputs:
         branch_name: ${{ steps.verify_pr_number.outputs.result }}
 
-    # ======================================================
-    # Now you can use the branch_name output from the previous step.
-    # ======================================================
-    - name: Output PR Branch Name
-      run: echo "PR branch name is: ${{ steps.verify_pr_number.outputs.branch_name }}"
