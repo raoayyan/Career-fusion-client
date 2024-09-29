@@ -1,12 +1,11 @@
 
 import './Navbar.css';
 import { Link } from 'react-router-dom';
-import { logoutUser } from '../../features/authSlice';
-import { useDispatch, useSelector } from 'react-redux';
+
+
 
 const Navbar = () => {
-  const dispatch = useDispatch();
-  const auth = useSelector((state)=> state.auth);
+ 
 
   return (
     <div className="navbar-container">
