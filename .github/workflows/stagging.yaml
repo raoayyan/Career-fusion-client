@@ -41,6 +41,5 @@ jobs:
           
           console.log("PR ref: " + response.data.head.ref);
           return response.data.head.ref;
-      outputs:
-        branch_name: ${{ steps.verify_pr_number.outputs.result }}
+    
 
