@@ -132,7 +132,7 @@ const Home = () => {
                   <p>
                     Explore our Skill Test section and challenge yourself with
                     quizzes tailored to various fields, including Modern Stack,
-                    Data Engineering, DevOps, Flutter, and more.
+                    Data Engineering, DevOps, Flutter, and more.Plus the Engineering.
                   </p>
                 </span>
                 <br></br>
