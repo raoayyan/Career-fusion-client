@@ -28,30 +28,31 @@ jobs:
       id: verify_pr_number
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-       script: |
+        script: |
+          // Retrieve the PR number from the inputs
           const prNumber = core.getInput('PR_number');
   
           // Log the PR number to ensure it's being passed correctly
-          console.log("Received PR Number:", prNumber || 'No PR number received');
+          console.log("Received PR Number:", prNumber);
 
           // Validate the PR number (it should be a valid integer)
-          if (!prNumber) {
-            throw new Error('PR Number is missing!');
-          }
           if (isNaN(parseInt(prNumber))) {
             throw new Error(`Invalid PR Number: ${prNumber}`);
-          }
+           }
 
+            // Fetch the pull request details
           const response = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: parseInt(prNumber)
-          });
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+                pull_number: parseInt(prNumber)
+            });
 
+          // Validate if the pull request is open
           if (!response || response.data.state !== 'open') {
             throw new Error('Pull request is not open or number is not valid!');
           }
 
+          // Log the PR branch ref for confirmation
           console.log("PR ref: " + response.data.head.ref);
           return response.data.head.ref;
     
