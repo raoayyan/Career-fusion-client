@@ -22,7 +22,8 @@ jobs:
         run: |
           pr_number=${{ github.event.inputs.pr_number }}
           gh pr view $pr_number || exit 1
-      up# aws set y    
+
+      # AWS Setup
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -49,7 +50,6 @@ jobs:
           echo "EC2 Public IP is $(terraform output public_ip)"
           echo "Public IP: $(terraform output public_ip)" >> $GITHUB_ENV
 
-      
       # SSH into EC2 and deploy code
       - name: SSH into EC2
         uses: appleboy/ssh-action@master
@@ -63,10 +63,10 @@ jobs:
             npm install
             npm start &
 
-              
-            # Post EC2 public URL as a comment on the PR
-            - name: Comment EC2 URL on PR
-              run: gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.public_ip }}"
+      # Post EC2 public URL as a comment on the PR
+      - name: Comment EC2 URL on PR
+        run: |
+          gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.public_ip }}"
 
   cleanup:
     runs-on: ubuntu-latest
