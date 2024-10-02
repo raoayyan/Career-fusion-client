@@ -17,7 +17,7 @@ resource "aws_instance" "pr_instance" {
               # Optional: clone the repo inside EC2 and run npm commands here.
               EOF
 
-  key_name = "your-key-pair-name"
+  key_name = "my-github-keypair"
 
   # Output the instance's public IP
   associate_public_ip_address = true
