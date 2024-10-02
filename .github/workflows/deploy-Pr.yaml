@@ -1,0 +1,83 @@
+name: Deploy Pull Request to EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'The number of the pull request'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Verify if PR exists
+      - name: Verify Pull Request
+        id: pr
+        run: |
+          pr_number=${{ github.event.inputs.pr_number }}
+          gh pr view $pr_number || exit 1
+      up# aws set y    
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      # Initialize Terraform
+      - name: Initialize Terraform
+        run: terraform init
+
+      # Apply Terraform (create EC2)
+      - name: Apply Terraform to create EC2
+        id: apply
+        run: terraform apply -auto-approve
+
+      # Get EC2 public IP (assuming terraform outputs it)
+      - name: Get EC2 Public IP
+        run: |
+          echo "EC2 Public IP is $(terraform output public_ip)"
+          echo "Public IP: $(terraform output public_ip)" >> $GITHUB_ENV
+
+      
+      # SSH into EC2 and deploy code
+      - name: SSH into EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.public_ip }}          # The public IP of the EC2 instance
+          username: ec2-user                  # Default user for Amazon Linux AMIs
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # Your private key stored in GitHub Secrets
+          script: |
+            git clone -b pull/${{ github.event.inputs.pr_number }}/head https://github.com/owner/repo.git
+            cd repo
+            npm install
+            npm start &
+
+              
+            # Post EC2 public URL as a comment on the PR
+            - name: Comment EC2 URL on PR
+              run: gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.public_ip }}"
+
+  cleanup:
+    runs-on: ubuntu-latest
+
+    if: github.event.pull_request.merged || github.event.pull_request.closed
+
+    steps:
+      # Setup Terraform for cleanup
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      # Destroy Terraform (delete EC2 instance)
+      - name: Destroy EC2
+        run: terraform destroy -auto-approve
