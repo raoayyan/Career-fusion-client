@@ -53,14 +53,15 @@ jobs:
       # Get EC2 public IP (assuming terraform outputs it)
       - name: Get EC2 Public IP
         run: |
-          echo "EC2 Public IP is $(terraform output public_ip)"
-          echo "Public IP: $(terraform output public_ip)" >> $GITHUB_ENV
+          public_ip=$(terraform output -raw public_ip)  # Use -raw to avoid formatting issues
+          echo "EC2_PUBLIC_IP=$public_ip" >> $GITHUB_ENV
+          echo "EC2 Public IP is $public_ip"
 
       # SSH into EC2 and deploy code
       - name: SSH into EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ env.public_ip }}          # The public IP of the EC2 instance
+          host: ${{ env.EC2_PUBLIC_IP }}      # Using the correct environment variable
           username: ec2-user                  # Default user for Amazon Linux AMIs
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Your private key stored in GitHub Secrets
           script: |
@@ -74,7 +75,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.public_ip }}"
+          gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.EC2_PUBLIC_IP }}"
 
   cleanup:
     runs-on: ubuntu-latest
