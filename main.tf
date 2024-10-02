@@ -48,7 +48,7 @@ resource "aws_instance" "web" {
               apt-get install -y git
 
               # Install Node.js and npm
-              curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+              curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
               apt-get install -y nodejs
               EOF
 }
