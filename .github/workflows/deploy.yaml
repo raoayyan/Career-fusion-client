@@ -61,12 +61,27 @@ jobs:
       #     echo "EC2_PUBLIC_IP=$public_ip" | tr -d '\r' >> $GITHUB_ENV  # Removes any possible carriage returns
       #     cat $GITHUB_ENV  # Check if it was written correctly
       - name: Get EC2 Public IP
+        id: get_ip
         run: |
-          public_ip=$(terraform output -raw public_ip)
-          echo "EC2_PUBLIC_IP=$public_ip" >> $GITHUB_ENV
+          # Capture the output and clean it
+          PUBLIC_IP=$(terraform output -raw public_ip 2>/dev/null || echo "")
+          
+          # Verify the IP is in the correct format
+          if [[ $PUBLIC_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+            echo "Valid IP found: $PUBLIC_IP"
+          else
+            echo "Error: Invalid or missing IP address"
+            echo "Terraform output was: $PUBLIC_IP"
+            exit 1
+          fi
+      
+      # Debug step
+      - name: Debug IP Address
+        run: |
+          echo "Stored IP address: ${{ env.EC2_PUBLIC_IP }}"
+          terraform output
 
-      - name: Print EC2 Public IP
-        run: echo "EC2 Public IP:${{ env.EC2_PUBLIC_IP }}"
 
       # SSH into EC2 and deploy code
       - name: SSH into EC2
@@ -82,11 +97,16 @@ jobs:
             npm start &
 
       # Post EC2 public URL as a comment on the PR
-      - name: Comment EC2 URL on PR
+       - name: Comment EC2 URL on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.EC2_PUBLIC_IP }}"
+          if [ -n "${{ env.EC2_PUBLIC_IP }}" ]; then
+            gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.EC2_PUBLIC_IP }}"
+          else
+            gh pr comment ${{ github.event.inputs.pr_number }} --body "Deployment failed: Could not retrieve EC2 IP address"
+          fi
+
 
   cleanup:
     runs-on: ubuntu-latest
