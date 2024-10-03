@@ -12,24 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Set GH_TOKEN environment variable for GitHub CLI
-      - name: Set up GH_TOKEN
-        run: echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
-
-      # Verify if PR exists
       - name: Verify Pull Request
-        id: pr
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pr_number=${{ github.event.inputs.pr_number }}
           gh pr view $pr_number || exit 1
 
-      # Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -37,90 +29,84 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           
-      # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      # Initialize Terraform
       - name: Initialize Terraform
         run: terraform init
 
-      # Apply Terraform (create EC2)
-      - name: Apply Terraform to create EC2
+      - name: Apply Terraform
         id: apply
         run: terraform apply -auto-approve
 
-      
-      # Get EC2 public IP (cleaner approach)
-      # Get EC2 Public IP (refined)
-      # - name: Get EC2 Public IP
-      #   run: |
-      #     public_ip=$(terraform output -raw public_ip | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
-      #     echo "EC2 Public IP is $public_ip"
-      #     # Clean up the variable and make sure there are no trailing/extra characters
-      #     echo "EC2_PUBLIC_IP=$public_ip" | tr -d '\r' >> $GITHUB_ENV  # Removes any possible carriage returns
-      #     cat $GITHUB_ENV  # Check if it was written correctly
       - name: Extract EC2 Public IP
         id: extract_ip
         run: |
-          # First, get the raw output and save it to a file
+          # Get the raw output and save it to a file
           terraform output -raw public_ip > ip_output.txt
           
-          # Use grep to extract only the IP address and save it to a new variable
+          # Extract only the IP address
           CLEAN_IP=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ip_output.txt || echo "")
           
           if [[ -n "$CLEAN_IP" ]]; then
             echo "Found IP: $CLEAN_IP"
-            # Use a specific delimiter for the GitHub Actions environment file
-            echo "ec2_ip=$CLEAN_IP" >> "$GITHUB_OUTPUT"
+            echo "ec2_ip=$CLEAN_IP" >> $GITHUB_OUTPUT
           else
             echo "No valid IP found in output:"
             cat ip_output.txt
             exit 1
           fi
-      
+
       - name: Debug IP Extraction
         run: |
           echo "Raw Terraform output:"
           cat ip_output.txt
           echo "Extracted IP: ${{ steps.extract_ip.outputs.ec2_ip }}"
 
-
-      # SSH into EC2 and deploy code
-      - name: SSH into EC2
+      - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ steps.extract_ip.outputs.ec2_ip }}      # Using the correct environment variable
-          username: ubuntu                  # Default user for Amazon Linux AMIs
-          key: ${{ secrets.SSH_PRIVATE_KEY }} # Your private key stored in GitHub Secrets
+          host: ${{ steps.extract_ip.outputs.ec2_ip }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            git clone -b pull/${{ github.event.inputs.pr_number }}/head https://github.com/owner/repo.git
-            cd repo
+            git clone -b pull/${{ github.event.inputs.pr_number }}/head https://github.com/${{ github.repository }}.git
+            cd $(basename ${{ github.repository }})
             npm install
             npm start &
 
-      # Post EC2 public URL as a comment on the PR
-       - name: Comment EC2 URL on PR
+      - name: Comment on PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ env.EC2_PUBLIC_IP }}" ]; then
-            gh pr comment ${{ github.event.inputs.pr_number }} --body "Website deployed at http://${{ env.EC2_PUBLIC_IP }}"
+          PR_COMMENT="Deployment status: "
+          if [[ -n "${{ steps.extract_ip.outputs.ec2_ip }}" ]]; then
+            PR_COMMENT+="Success! Website deployed at http://${{ steps.extract_ip.outputs.ec2_ip }}"
           else
-            gh pr comment ${{ github.event.inputs.pr_number }} --body "Deployment failed: Could not retrieve EC2 IP address"
+            PR_COMMENT+="Failed. Could not retrieve EC2 IP address."
           fi
-
+          gh pr comment ${{ github.event.inputs.pr_number }} --body "$PR_COMMENT"
 
   cleanup:
     runs-on: ubuntu-latest
-
-    if: github.event.pull_request.merged || github.event.pull_request.closed
+    if: github.event.pull_request.merged == true || github.event.pull_request.closed == true
 
     steps:
-      # Setup Terraform for cleanup
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      # Destroy Terraform (delete EC2 instance)
-      - name: Destroy EC2
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Destroy EC2 Instance
         run: terraform destroy -auto-approve
