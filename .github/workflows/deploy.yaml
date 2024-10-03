@@ -15,13 +15,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Verify Pull Request
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pr_number=${{ github.event.inputs.pr_number }}
-          gh pr view $pr_number || exit 1
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -35,78 +28,61 @@ jobs:
       - name: Initialize Terraform
         run: terraform init
 
-      - name: Apply Terraform
+      - name: Apply Terraform and Get IP
         id: apply
-        run: terraform apply -auto-approve
-
-      - name: Extract EC2 Public IP
-        id: extract_ip
         run: |
-          # Get the raw output and save it to a file
-          terraform output -raw public_ip > ip_output.txt
-          
-          # Extract only the IP address
-          CLEAN_IP=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ip_output.txt || echo "")
-          
-          if [[ -n "$CLEAN_IP" ]]; then
-            echo "Found IP: $CLEAN_IP"
-            echo "ec2_ip=$CLEAN_IP" >> $GITHUB_OUTPUT
-          else
-            echo "No valid IP found in output:"
-            cat ip_output.txt
-            exit 1
-          fi
+          terraform apply -auto-approve
+          echo "ec2_ip=$(terraform output -raw public_ip)" >> $GITHUB_OUTPUT
 
-      - name: Debug IP Extraction
-        run: |
-          echo "Raw Terraform output:"
-          cat ip_output.txt
-          echo "Extracted IP: ${{ steps.extract_ip.outputs.ec2_ip }}"
+      - name: Debug IP
+        run: echo "EC2 IP is ${{ steps.apply.outputs.ec2_ip }}"
 
-      - name: SSH into EC2 and Deploy
+      # Wait for instance to be ready
+      - name: Wait for instance
+        run: sleep 60  # Adjust time as needed
+
+      # Deploy using rsync
+      - name: Deploy to EC2
+        uses: burnett01/rsync-deployments@5.2.1
+        with:
+          switches: -avzr --delete
+          path: ./*
+          remote_path: /home/ubuntu/app
+          remote_host: ${{ steps.apply.outputs.ec2_ip }}
+          remote_user: ubuntu
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Execute commands on EC2
+      - name: Setup and Start Application
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ steps.extract_ip.outputs.ec2_ip }}
+          host: ${{ steps.apply.outputs.ec2_ip }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            git clone -b pull/${{ github.event.inputs.pr_number }}/head https://github.com/${{ github.repository }}.git
-            cd $(basename ${{ github.repository }})
+            cd ~/app
             npm install
-            npm start &
+            # Start or restart the application
+            npm start
 
       - name: Comment on PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_COMMENT="Deployment status: "
-          if [[ -n "${{ steps.extract_ip.outputs.ec2_ip }}" ]]; then
-            PR_COMMENT+="Success! Website deployed at http://${{ steps.extract_ip.outputs.ec2_ip }}"
-          else
-            PR_COMMENT+="Failed. Could not retrieve EC2 IP address."
-          fi
-          gh pr comment ${{ github.event.inputs.pr_number }} --body "$PR_COMMENT"
+          gh pr comment ${{ github.event.inputs.pr_number }} \
+            --body "Deployment completed! Access the app at http://${{ steps.apply.outputs.ec2_ip }}"
 
   cleanup:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true || github.event.pull_request.closed == true
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v1
+      - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Initialize Terraform
-        run: terraform init
-
-      - name: Destroy EC2 Instance
-        run: terraform destroy -auto-approve
+      - run: |
+          terraform init
+          terraform destroy -auto-approve
