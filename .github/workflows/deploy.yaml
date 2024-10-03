@@ -60,34 +60,37 @@ jobs:
       #     # Clean up the variable and make sure there are no trailing/extra characters
       #     echo "EC2_PUBLIC_IP=$public_ip" | tr -d '\r' >> $GITHUB_ENV  # Removes any possible carriage returns
       #     cat $GITHUB_ENV  # Check if it was written correctly
-      - name: Get EC2 Public IP
-        id: get_ip
+      - name: Extract EC2 Public IP
+        id: extract_ip
         run: |
-          # Capture the output and clean it
-          PUBLIC_IP=$(terraform output -raw public_ip 2>/dev/null || echo "")
+          # First, get the raw output and save it to a file
+          terraform output -raw public_ip > ip_output.txt
           
-          # Verify the IP is in the correct format
-          if [[ $PUBLIC_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
-            echo "Valid IP found: $PUBLIC_IP"
+          # Use grep to extract only the IP address and save it to a new variable
+          CLEAN_IP=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ip_output.txt || echo "")
+          
+          if [[ -n "$CLEAN_IP" ]]; then
+            echo "Found IP: $CLEAN_IP"
+            # Use a specific delimiter for the GitHub Actions environment file
+            echo "ec2_ip=$CLEAN_IP" >> "$GITHUB_OUTPUT"
           else
-            echo "Error: Invalid or missing IP address"
-            echo "Terraform output was: $PUBLIC_IP"
+            echo "No valid IP found in output:"
+            cat ip_output.txt
             exit 1
           fi
       
-      # Debug step
-      - name: Debug IP Address
+      - name: Debug IP Extraction
         run: |
-          echo "Stored IP address: ${{ env.EC2_PUBLIC_IP }}"
-          terraform output
+          echo "Raw Terraform output:"
+          cat ip_output.txt
+          echo "Extracted IP: ${{ steps.extract_ip.outputs.ec2_ip }}"
 
 
       # SSH into EC2 and deploy code
       - name: SSH into EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ env.EC2_PUBLIC_IP }}      # Using the correct environment variable
+          host: ${{ steps.extract_ip.outputs.ec2_ip }}      # Using the correct environment variable
           username: ubuntu                  # Default user for Amazon Linux AMIs
           key: ${{ secrets.SSH_PRIVATE_KEY }} # Your private key stored in GitHub Secrets
           script: |
