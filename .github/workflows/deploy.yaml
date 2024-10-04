@@ -33,7 +33,9 @@ jobs:
               console.log("PR ref: " + response.data.head.ref);
               return response.data.head.ref;
             }
-
+        # Checkout the repository for Terraform files
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
