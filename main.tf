@@ -92,5 +92,5 @@ resource "aws_security_group" "web-sg" {
 }
 
 output "ec2_ip" {
-  value = aws_instance.your_instance_name.public_ip
+  value = aws_instance.web.public_ip
 }
