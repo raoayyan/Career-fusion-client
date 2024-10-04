@@ -12,8 +12,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+     
+      - name: Verify Pull Request Number
+        uses: actions/github-script@v5
+        id: verify_pr_number
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const response = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ github.event.inputs.PR_number }}
+            });
+            
+            // Check if the pull request is open
+            if (response.data.number !== ${{ github.event.inputs.PR_number }}) {
+              throw new Error('Pull request is not open or number is not valid!');
+            } else {
+              console.log("PR ref: " + response.data.head.ref);
+              return response.data.head.ref;
+            }
+
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -32,15 +52,22 @@ jobs:
         id: apply
         run: |
           terraform apply -auto-approve
-          echo "ec2_ip=$(terraform output -raw public_ip)" >> $GITHUB_OUTPUT
-
+          echo "EC2_IP=$(terraform output -raw ec2_ip)" >> $GITHUB_ENV
+      
       - name: Debug IP
         run: echo "EC2 IP is ${{ steps.apply.outputs.ec2_ip }}"
 
       # Wait for instance to be ready
       - name: Wait for instance
         run: sleep 60  # Adjust time as needed
-
+        
+       # ======================================================
+       # Checkout the PR branch so that we can deploy it
+       # ======================================================
+      - uses: actions/checkout@v2
+        name: 'Checkout PR branch'
+        with:
+          ref: ${{ steps.verify_pr_number.outputs.result }}
       # Deploy using rsync
       - name: Deploy to EC2
         uses: burnett01/rsync-deployments@5.2.1
@@ -48,7 +75,7 @@ jobs:
           switches: -avzr --delete
           path: ./*
           remote_path: /home/ubuntu/app
-          remote_host: ${{ steps.apply.outputs.ec2_ip }}
+          remote_host: ${{ env.EC2_IP }}
           remote_user: ubuntu
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -56,7 +83,7 @@ jobs:
       - name: Setup and Start Application
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ steps.apply.outputs.ec2_ip }}
+          host: ${{ env.EC2_IP }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
@@ -70,7 +97,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr comment ${{ github.event.inputs.pr_number }} \
-            --body "Deployment completed! Access the app at http://${{ steps.apply.outputs.ec2_ip }}"
+            --body "Deployment completed! Access the app at http://${{ env.EC2_IP }}"
 
   cleanup:
     runs-on: ubuntu-latest
