@@ -16,6 +16,11 @@ provider "aws" {
   region = "us-west-2"
 }
 
+variable "staging_public_key" {
+  description = "Staging environment public key value"
+  type        = string
+}
+
 resource "random_pet" "sg" {}
 
 data "aws_ami" "ubuntu" {
@@ -34,11 +39,19 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+resource "aws_key_pair" "staging_key" {
+  key_name   = "staging-key"
+  public_key = var.staging_public_key
+
+  tags = {
+    "Name" = "staging_public_key"
+  }
+}
 resource "aws_instance" "web" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.web-sg.id]
-
+  key_name               = aws_key_pair.staging_key.key_name
   # Install Git, Node.js, and npm
   user_data = <<-EOF
               #!/bin/bash
@@ -78,6 +91,6 @@ resource "aws_security_group" "web-sg" {
   }
 }
 
-output "public_ip" {
-  value = aws_instance.web.public_ip
+output "ec2_ip" {
+  value = aws_instance.your_instance_name.public_ip
 }
