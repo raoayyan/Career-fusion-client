@@ -65,7 +65,7 @@ jobs:
         run: |
           echo "IP from file:"
           cat ip.txt
-          echo "IP from output: ${{ steps.apply.outputs.ec2_ip }}"
+          echo "IP from output: ${{ steps.apply.outputs.stdout }}"
 
       # Wait for instance to be ready
       - name: Wait for instance
