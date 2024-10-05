@@ -39,19 +39,19 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_key_pair" "staging_key" {
-  key_name   = "staging-key"
-  public_key = var.staging_public_key
+# resource "aws_key_pair" "staging_key" {
+#   key_name   = "staging-key"
+#   public_key = var.staging_public_key
 
-  tags = {
-    "Name" = "staging_public_key"
-  }
-}
+#   tags = {
+#     "Name" = "staging_public_key"
+#   }
+# }
 resource "aws_instance" "web" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.web-sg.id]
-  key_name               = aws_key_pair.staging_key.key_name
+  key_name               = "next-app"
   # Install Git, Node.js, and npm
   user_data = <<-EOF
               #!/bin/bash
