@@ -16,10 +16,10 @@ provider "aws" {
   region = "us-west-2"
 }
 
-variable "staging_public_key" {
-  description = "Staging environment public key value"
-  type        = string
-}
+# variable "staging_public_key" {
+#   description = "Staging environment public key value"
+#   type        = string
+# }
 
 resource "random_pet" "sg" {}
 
