@@ -57,7 +57,7 @@ jobs:
           # Redirect only stdout to the file, ignoring debug output which goes to stderr
           terraform output -raw ec2_ip 2>/dev/null > ip.txt
           # Extract the IP address using grep
-          ip=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ip.txt)
+          ip=$(grep -oE '[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' ip.txt)
           echo "ec2_ip=$ip" >> "$GITHUB_OUTPUT"
       
       - name: Verify IP
