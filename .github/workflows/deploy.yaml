@@ -54,15 +54,18 @@ jobs:
         id: apply
         run: |
           terraform apply -auto-approve
-          # Write the IP to a file
-          terraform output -raw ec2_ip > ip.txt
-          # Read the IP from the file and set it as output
-          echo "ec2_ip=$(cat ip.txt)" >> "$GITHUB_OUTPUT"
+          # Redirect only stdout to the file, ignoring debug output which goes to stderr
+          terraform output -raw ec2_ip 2>/dev/null > ip.txt
+          # Clean the file of any potential debug lines
+          sed -i '/::debug::/d' ip.txt
+          # Read the cleaned IP and set it as output
+          echo "ec2_ip=$(cat ip.txt | tr -d '\n')" >> "$GITHUB_OUTPUT"
       
       - name: Verify IP
         run: |
-          IP=$(cat ip.txt)
-          echo "Using IP: $IP"
+          echo "IP from file:"
+          cat ip.txt
+          echo "IP from output: ${{ steps.apply.outputs.ec2_ip }}"
 
       # Wait for instance to be ready
       - name: Wait for instance
