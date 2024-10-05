@@ -56,16 +56,25 @@ jobs:
           terraform apply -auto-approve
           # Redirect only stdout to the file, ignoring debug output which goes to stderr
           terraform output -raw ec2_ip 2>/dev/null > ip.txt
-          # Clean the file of any potential debug lines
-          sed -r -e 's/^[^[]*\[([^]\]*)].*/\1/' ip.txt
-          # Read the cleaned IP and set it as output
+         
           echo "ec2_ip=$(cat ip.txt | tr -d '\n')" >> "$GITHUB_OUTPUT"
       
       - name: Verify IP
         run: |
-          echo "IP from file:"
-          cat ip.txt
-          echo "IP from output: ${{ steps.apply.outputs.ec2_ip }}"
+          # Extract clean IP from previous step
+          INSTANCE_IP="${{ steps.apply.outputs.ec2_ip }}"
+          
+          # Extract just the IP address using regex
+          if [[ $INSTANCE_IP =~ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            CLEAN_IP="${BASH_REMATCH[1]}"
+            echo "Clean IP: $CLEAN_IP"
+            
+            # Set as environment variable for this and subsequent steps
+            echo "INSTANCE_IP=$CLEAN_IP" >> "$GITHUB_ENV"
+          else
+            echo "Failed to extract valid IP"
+            exit 1
+          fi
 
       # Wait for instance to be ready
       - name: Wait for instance
@@ -85,7 +94,7 @@ jobs:
           switches: -avzr --delete
           path: ./*
           remote_path: /home/ubuntu/app
-          remote_host: ${{ steps.apply.outputs.ec2_ip }}
+          remote_host: ${{ env.INSTANCE_IP }}
           remote_user: ubuntu
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -93,7 +102,7 @@ jobs:
       - name: Setup and Start Application
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ steps.apply.outputs.ec2_ip }}
+          host: ${{ env.INSTANCE_IP }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
