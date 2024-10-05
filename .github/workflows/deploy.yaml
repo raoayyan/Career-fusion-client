@@ -54,11 +54,20 @@ jobs:
         id: apply
         run: |
           terraform apply -auto-approve
-          # Redirect only stdout to the file, ignoring debug output which goes to stderr
-          terraform output -raw ec2_ip 2>/dev/null > ip.txt
-          # Extract the IP address using grep
-          ip=$(grep -oE '[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' ip.txt)
-          echo "ec2_ip=$ip" >> "$GITHUB_OUTPUT"
+          # Get the IP and handle potential errors
+          if IP=$(terraform output -raw ec2_ip 2>/dev/null); then
+            # Verify the IP format
+            if [[ $IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "ec2_ip=$IP" >> "$GITHUB_OUTPUT"
+              echo "$IP" > ip.txt
+            else
+              echo "Error: Invalid IP format: $IP"
+              exit 1
+            fi
+          else
+            echo "Error: Failed to get IP from terraform output"
+            exit 1
+          fi
       
       - name: Verify IP
         run: |
