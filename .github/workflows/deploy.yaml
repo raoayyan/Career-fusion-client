@@ -108,9 +108,9 @@ jobs:
           script: |
             cd ~/app
             npm install
-            
+
             # Install PM2 globally if not already installed
-            npm install -g pm2
+            sudo npm install -g pm2
             
             # Stop any existing frontend process
             pm2 stop frontend || true
