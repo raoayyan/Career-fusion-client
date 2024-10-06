@@ -85,33 +85,29 @@ jobs:
        # ======================================================
       - name: Tag EC2 Instance
         run: |
-          # First, verify the IP address
           echo "Looking for instance with IP: ${{ env.INSTANCE_IP }}"
           
-          # Try to get the instance ID
+          # Try to get the instance ID using public IP address first
           INSTANCE_ID=$(aws ec2 describe-instances \
             --filters "Name=ip-address,Values=${{ env.INSTANCE_IP }}" \
             --query 'Reservations[].Instances[].InstanceId' \
             --output text)
           
-          # Check if instance ID was found
+          # If no instance ID was found, try private IP
           if [ -z "$INSTANCE_ID" ]; then
-            echo "No instance found with IP ${{ env.INSTANCE_IP }}"
-            echo "Trying with private IP..."
+            echo "No instance found with public IP: ${{ env.INSTANCE_IP }}. Trying private IP..."
             
-            # Try with private IP
-            INSTANCE_ID=$(aws ec2 describe-instances \
-              --filters "Name=private-ip-address,Values=${{ env.INSTANCE_IP }}" \
-              --query 'Reservations[].Instances[].InstanceId' \
-              --output text)
+            
           fi
           
-          # Final check and tagging
+          # Check if we found an instance
           if [ -z "$INSTANCE_ID" ]; then
             echo "Error: Could not find any EC2 instance with IP ${{ env.INSTANCE_IP }}"
             exit 1
           else
             echo "Found instance: $INSTANCE_ID"
+            
+            # Attempt to tag the instance
             if aws ec2 create-tags \
               --resources "$INSTANCE_ID" \
               --tags "Key=PR,Value=${{ github.event.inputs.pr_number }}"; then
@@ -121,6 +117,7 @@ jobs:
               exit 1
             fi
           fi
+
 
 
       - uses: actions/checkout@v2
