@@ -108,15 +108,23 @@ jobs:
           script: |
             cd ~/app
             npm install
-            # Start or restart the application
-            npm start
-
+            
+            # Install PM2 globally if not already installed
+            npm install -g pm2
+            
+            # Stop any existing frontend process
+            pm2 stop frontend || true
+            pm2 delete frontend || true
+            
+            # Start the React app with PM2
+            pm2 start npm --name "frontend" -- start
+      
       - name: Comment on PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr comment ${{ github.event.inputs.pr_number }} \
-            --body "Deployment completed! Access the app at http://${{ env.EC2_IP }}"
+            --body "Deployment completed! Access the app at http://${{ env.EC2_IP }}:3000"
 
   cleanup:
     runs-on: ubuntu-latest
