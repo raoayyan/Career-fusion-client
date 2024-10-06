@@ -47,14 +47,26 @@ jobs:
 
       - name: Update Deployment Record
         if: steps.check_deployment.outputs.cleanup_needed == 'true'
+        uses: actions/checkout@v2
+        with:
+          # Checkout the PR branch (use the ref from the pull request)
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Modify and Commit Deployment Record
+        if: steps.check_deployment.outputs.cleanup_needed == 'true'
         run: |
-          git checkout ${{ github.event.pull_request.head.ref }}
+          # Update the deployed PRs record
           sed -i "/${{ github.event.pull_request.number }}/d" .github/deployed_prs.txt
+          
+          # Configure Git
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
+          
+          # Commit and push the changes
           git add .github/deployed_prs.txt
           git commit -m "Remove PR ${{ github.event.pull_request.number }} from deployment record"
-          git push origin ${{ github.event.pull_request.head.ref }}
+          git push origin ${{ github.head_ref }}
+
 
       - name: Comment on PR
         if: steps.check_deployment.outputs.cleanup_needed == 'true'
