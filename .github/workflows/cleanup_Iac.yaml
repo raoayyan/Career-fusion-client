@@ -29,19 +29,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           
-      - name: Setup and Apply Terraform
+      - name: Terminate EC2 Instance
         if: steps.check_deployment.outputs.cleanup_needed == 'true'
         run: |
-          terraform init
-          
-          # Find and terminate the specific EC2 instance for this PR
           INSTANCE_ID=$(aws ec2 describe-instances \
             --filters "Name=tag:PR,Values=${{ github.event.pull_request.number }}" \
             --query 'Reservations[].Instances[].InstanceId' \
             --output text)
           
           if [ ! -z "$INSTANCE_ID" ]; then
-            terraform destroy -auto-approve
+            echo "Terminating EC2 instance: $INSTANCE_ID"
+            aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+            echo "EC2 instance terminated"
           else
             echo "No EC2 instance found for this PR"
           fi
@@ -49,12 +48,13 @@ jobs:
       - name: Update Deployment Record
         if: steps.check_deployment.outputs.cleanup_needed == 'true'
         run: |
+          git checkout ${{ github.event.pull_request.head.ref }}
           sed -i "/${{ github.event.pull_request.number }}/d" .github/deployed_prs.txt
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
           git add .github/deployed_prs.txt
           git commit -m "Remove PR ${{ github.event.pull_request.number }} from deployment record"
-          git push
+          git push origin ${{ github.event.pull_request.head.ref }}
 
       - name: Comment on PR
         if: steps.check_deployment.outputs.cleanup_needed == 'true'
