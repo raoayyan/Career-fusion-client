@@ -83,6 +83,17 @@ jobs:
        # ======================================================
        # Checkout the PR branch so that we can deploy it
        # ======================================================
+      - name: Tag EC2 Instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=ip-address,Values=${{ env.INSTANCE_IP }}" \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text)
+          aws ec2 create-tags \
+            --resources $INSTANCE_ID \
+            --tags Key=PR,Value=${{ github.event.inputs.pr_number }}
+
+
       - uses: actions/checkout@v2
         name: 'Checkout PR branch'
         with:
@@ -118,25 +129,24 @@ jobs:
             
             # Start the React app with PM2
             pm2 start npm --name "frontend" -- start
+     
+       # After successful deployment, store PR info in a file in the repo
       
+      - name: Record Deployment
+        run: |
+          echo "${{ github.event.inputs.pr_number }}" >> .github/deployed_prs.txt
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add .github/deployed_prs.txt
+          git commit -m "Record PR ${{ github.event.inputs.pr_number }} deployment"
+          git push
+
+          
       - name: Comment on PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr comment ${{ github.event.inputs.pr_number }} \
-            --body "Deployment completed! Access the app at http://${{ env.EC2_IP }}:3000"
-
-  cleanup:
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event.pull_request.closed == true
-    steps:
-      - uses: actions/checkout@v2
-      - uses: hashicorp/setup-terraform@v1
-      - uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - run: |
-          terraform init
-          terraform destroy -auto-approve
+            --body "Deployment completed! Access the app at http://${{ env.INSTANCE_IP }}:3000"
+      
+     

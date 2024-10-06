@@ -1,0 +1,65 @@
+name: Cleanup PR Environment
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  check-and-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Check if PR was deployed
+        id: check_deployment
+        run: |
+          if grep -q "^${{ github.event.pull_request.number }}$" .github/deployed_prs.txt; then
+            echo "PR was deployed, proceeding with cleanup"
+            echo "cleanup_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "PR was not deployed, skipping cleanup"
+            echo "cleanup_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS Credentials
+        if: steps.check_deployment.outputs.cleanup_needed == 'true'
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          
+      - name: Setup and Apply Terraform
+        if: steps.check_deployment.outputs.cleanup_needed == 'true'
+        run: |
+          terraform init
+          
+          # Find and terminate the specific EC2 instance for this PR
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:PR,Values=${{ github.event.pull_request.number }}" \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text)
+          
+          if [ ! -z "$INSTANCE_ID" ]; then
+            terraform destroy -auto-approve
+          else
+            echo "No EC2 instance found for this PR"
+          fi
+
+      - name: Update Deployment Record
+        if: steps.check_deployment.outputs.cleanup_needed == 'true'
+        run: |
+          sed -i "/${{ github.event.pull_request.number }}/d" .github/deployed_prs.txt
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add .github/deployed_prs.txt
+          git commit -m "Remove PR ${{ github.event.pull_request.number }} from deployment record"
+          git push
+
+      - name: Comment on PR
+        if: steps.check_deployment.outputs.cleanup_needed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "Cleanup completed! All resources for this PR have been destroyed."
